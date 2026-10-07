@@ -1,7 +1,7 @@
 ---
-title: "Live Weather Integration with Geolocation"
+title: "Weather Integration: Geolocation and Activity Nudges"
 sidebarTitle: "Weather Integration"
-description: "Flatiron Support Troop fetches real-time weather for your location via the OpenWeatherMap API and pairs it with a context-aware activity nudge for each emotion."
+description: "Flatiron Support Troop fetches real-time local weather via OpenWeatherMap and pairs it with an emotion-specific activity nudge on every emotion page."
 ---
 
 ## Overview
@@ -56,7 +56,7 @@ async function fetchWeatherData(){
 
 ## OpenWeatherMap API Endpoint
 
-```
+```http
 GET https://api.openweathermap.org/data/2.5/weather
   ?lat={latitude}
   &lon={longitude}

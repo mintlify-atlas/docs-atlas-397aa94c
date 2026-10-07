@@ -1,7 +1,7 @@
 ---
-title: "Client-Side Routing with React Router v6"
+title: "Flatiron Support Troop Routing with React Router v6"
 sidebarTitle: "Routing"
-description: "Flatiron Support Troop uses React Router v6 createBrowserRouter with nested routes to render the emotion, home, and feedback pages within a shared App shell."
+description: "React Router v6 route tree, App shell Outlet pattern, dynamic emotion URL segments, and the Netlify SPA redirect rule used by Flatiron Support Troop."
 ---
 
 Flatiron Support Troop is a single-page React application. All navigation is handled entirely client-side by **React Router v6** — the browser never performs a full-page reload when moving between the home picker, a per-emotion wellness page, and the feedback form.
@@ -67,7 +67,7 @@ createRoot(document.getElementById('root')).render( <RouterProvider router={rout
 ```jsx
 // src/App.jsx
 import Navbar from './Components/Navbar'
-import { Outlet, Link } from 'react-router-dom'
+import { Outlet, Routes, Route, Link } from 'react-router-dom'
 
 function App() {
   return (
@@ -193,9 +193,9 @@ The file `public/netlify.toml` solves this by redirecting every request back to 
 ```toml
 # public/netlify.toml
 [[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
+from= "/*"
+to="/index.html"
+status=200
 ```
 
 The `status = 200` (rewrite rather than redirect) means the URL in the browser bar stays unchanged while Netlify serves `index.html`, after which React Router parses the path and renders the correct route.

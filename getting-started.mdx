@@ -49,14 +49,14 @@ Before you begin, make sure you have the following:
   <Step title="Create your .env file">
     Create a `.env` file at the project root and populate it with your API credentials:
 
-    ```bash .env
+    ```env
     VITE_SPOTIFY_CLIENT_ID=your_spotify_client_id_here
     VITE_SPOTIFY_CLIENT_SECRET=your_spotify_client_secret_here
     VITE_WEATHER_KEY=your_openweathermap_api_key_here
     ```
 
     | Variable | Where to find it |
-    |----------|-----------------|
+    |----------|--------------------|
     | `VITE_SPOTIFY_CLIENT_ID` | Spotify Developer Dashboard → your app → **Client ID** |
     | `VITE_SPOTIFY_CLIENT_SECRET` | Spotify Developer Dashboard → your app → **Client Secret** (click "View") |
     | `VITE_WEATHER_KEY` | OpenWeatherMap → Account → [API keys](https://home.openweathermap.org/api_keys) |
@@ -79,7 +79,7 @@ Before you begin, make sure you have the following:
   <Step title="(Optional) Run a local JSON server for feedback">
     The app's feedback form submits responses to the hosted endpoint at `https://fist-json-server.onrender.com/responses`. **No local server is required** for this feature — the hosted instance is always available.
 
-    If you prefer to run your own local JSON server (for example, to develop offline or to inspect submitted data directly), you can install `json-server` globally and point `VITE_JSON_SERVER_URL` at `http://localhost:3000`:
+    If you prefer to run your own local JSON server (for example, to develop offline or to inspect submitted data directly), you can install `json-server` globally and start it on port 3000:
 
     ```bash
     # Install json-server globally
@@ -92,7 +92,7 @@ Before you begin, make sure you have the following:
     json-server --watch db.json --port 3000
     ```
 
-    You would then need to update the fetch URL in the feedback component to read from your custom environment variable instead of the hardcoded Render URL.
+    You would then need to update the hardcoded fetch URL in `src/Components/Feedback.jsx` to point at `http://localhost:3000/responses` instead of the Render endpoint.
   </Step>
 
 </Steps>
@@ -105,6 +105,6 @@ Once the dev server is running, open **http://localhost:5173** in your browser. 
 
 If tracks don't appear, open the browser console. Common issues include:
 
-- `Missing Spotify Client ID or Secret` — your `.env` variables are not being read. Ensure the file is named exactly `.env` (not `.env.local`) and that you restarted the dev server after creating it.
-- `401 Unauthorized` from Spotify — your Client ID or Secret is incorrect, or your Spotify app does not have the necessary scopes enabled.
-- Weather data not loading — the browser may have blocked geolocation, or your `VITE_WEATHER_KEY` is invalid / not yet activated (new OpenWeatherMap keys can take up to two hours to activate).
+- `Missing Spotify Client ID or Secret` — your `.env` variables are not being read. Ensure the file is named exactly `.env` and that you restarted the dev server after creating it.
+- `401 Unauthorized` from Spotify — your Client ID or Secret is incorrect. Double-check the values copied from the Spotify Developer Dashboard.
+- Weather data not loading — the browser may have blocked geolocation, or your `VITE_WEATHER_KEY` is invalid or not yet activated (new OpenWeatherMap keys can take up to two hours to activate).

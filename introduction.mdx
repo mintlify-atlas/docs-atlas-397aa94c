@@ -34,7 +34,8 @@ Flatiron Support Troop was created by **Amrita, Joyce, and Justin** — a trio o
 | UI framework | React 18 |
 | Build tool | Vite 5 |
 | Routing | React Router v6 |
-| Styling | Tailwind CSS v3 + tailwind-merge |
+| Styling | Tailwind CSS v3 + tailwind-merge + tailwindcss-animate |
+| Utility | clsx + class-variance-authority |
 | Primitive components | Radix UI (`hover-card`, `label`, `slot`, `tooltip`) |
 | Forms & validation | react-hook-form + zod |
 | Icons | lucide-react |
@@ -43,7 +44,7 @@ Flatiron Support Troop was created by **Amrita, Joyce, and Justin** — a trio o
 
 The app consumes three external services at runtime:
 
-1. **Spotify Web API** — authenticated via the [Client Credentials flow](https://developer.spotify.com/documentation/web-api/tutorials/client-credentials-flow). The access token is fetched using `VITE_SPOTIFY_CLIENT_ID` and `VITE_SPOTIFY_CLIENT_SECRET`, then cached in memory with automatic refresh before expiry.
+1. **Spotify Web API** — authenticated via the [Client Credentials flow](https://developer.spotify.com/documentation/web-api/tutorials/client-credentials-flow). The access token is fetched using `VITE_SPOTIFY_CLIENT_ID` and `VITE_SPOTIFY_CLIENT_SECRET`, then persisted in `localStorage` and reused until expiry, with automatic refresh on the next request.
 2. **OpenWeatherMap API** — the browser requests the user's geolocation coordinates and passes them to the `/data/2.5/weather` endpoint with `VITE_WEATHER_KEY` to retrieve current conditions in imperial units.
 3. **Hosted JSON Server** — user feedback submitted through the app is persisted to `https://fist-json-server.onrender.com/responses`, a hosted `json-server` instance that requires no authentication from the client.
 
@@ -57,21 +58,21 @@ The app consumes three external services at runtime:
   <Card
     title="Features"
     icon="sparkles"
-    href="/features"
+    href="/features/emotion-selection"
   >
     A deep dive into the mood selector, playlist player, breathing exercises, and weather widget.
   </Card>
   <Card
     title="Configuration"
     icon="sliders"
-    href="/configuration"
+    href="/configuration/environment-variables"
   >
     All environment variables, Spotify app settings, and OpenWeatherMap plan requirements explained.
   </Card>
   <Card
     title="Architecture"
     icon="diagram-project"
-    href="/architecture"
+    href="/architecture/routing"
   >
     How routing, API token management, and the feedback data flow fit together under the hood.
   </Card>

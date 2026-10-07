@@ -1,5 +1,5 @@
 ---
-title: "Spotify Playlists: Curated Music for Every Mood"
+title: "Spotify Playlists: Curated Music for Each Mood State"
 sidebarTitle: "Spotify Playlists"
 description: "For each emotion, Flatiron Support Troop fetches a curated Spotify playlist and displays the top three tracks with album art and audio previews."
 ---
@@ -108,9 +108,9 @@ The first three items from `emotionPlaylist` are rendered as a list. Each item s
 - **Album art** — 64 × 64 px thumbnail from `trackItem.track.album.images[0]?.url`
 - **Track name** — from `trackItem.track.name`
 - **Artist name(s)** — all artists joined with a comma, from `trackItem.track.artists.map(artist => artist.name).join(', ')`
-- **Audio preview** — an `<audio controls>` element rendered **only** when `trackItem.track.preview_url` is not `null`
+- **Audio preview** — an `<audio controls>` element rendered **only** when `trackItem.track.preview_url` is truthy
 
-> **Note:** Spotify sets `preview_url` to `null` for a significant portion of tracks depending on region and licensing. When this happens the audio player is simply omitted — no error is shown.
+> **Note:** Spotify sets `preview_url` to `null` for a significant portion of tracks depending on region and licensing. Because the render is guarded by a truthy check (`track.preview_url &&`), the audio player is simply omitted when the value is falsy — no error is shown.
 
 ---
 

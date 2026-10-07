@@ -1,7 +1,7 @@
 ---
-title: "Component Architecture of Flatiron Support Troop"
+title: "React Component Architecture — Flatiron Support Troop"
 sidebarTitle: "Components"
-description: "A reference for every React component in Flatiron Support Troop, including its props, state, and responsibilities within the app."
+description: "Reference for every React component in Flatiron Support Troop: props, state, and render output for App, Navbar, Header, Emotions, and Feedback."
 ---
 
 Flatiron Support Troop is composed of five React components and two pure data modules. The component tree is shallow: `App` acts as a layout shell, and each page component (`Header`, `Emotions`, `Feedback`) is a direct child rendered into the `<Outlet>`. `Navbar` is a persistent sibling that lives outside the outlet, always visible.
@@ -39,7 +39,7 @@ App
     ```jsx
     // src/App.jsx
     import Navbar from './Components/Navbar'
-    import { Outlet, Link } from 'react-router-dom'
+    import { Outlet, Routes, Route, Link } from 'react-router-dom'
 
     function App() {
       return (
@@ -326,7 +326,7 @@ The app uses **shadcn/ui** components — thin wrappers around Radix UI primitiv
 |---|---|---|
 | `button.tsx` | `@radix-ui/react-slot` | Styled button with variant support |
 | `card.tsx` | — | Container card layout |
-| `form.tsx` | `react-hook-form` + `@hookform/resolvers` + `zod` | Form field wrappers with validation |
+| `form.tsx` | `react-hook-form` | Form field wrappers with validation |
 | `hover-card.tsx` | `@radix-ui/react-hover-card` | Hoverable information popover |
 | `input.tsx` | — | Styled text input |
 | `label.tsx` | `@radix-ui/react-label` | Accessible form label |

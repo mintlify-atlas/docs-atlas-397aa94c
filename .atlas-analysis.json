@@ -1,0 +1,62 @@
+{
+  "projectType": "saas",
+  "projectName": "Flatiron Support Troop",
+  "projectDescription": "A mood-based wellness web app that pairs users with curated Spotify playlists, breathing exercises, and live weather data based on how they're feeling.",
+  "theme": "almond",
+  "primaryColor": "#9e8400",
+  "lightColor": "#dfc637",
+  "darkColor": "#7c6c1c",
+  "navigation": {
+    "groups": [
+      {
+        "group": "Overview",
+        "pages": ["introduction", "getting-started"]
+      },
+      {
+        "group": "Features",
+        "pages": [
+          "features/emotion-selection",
+          "features/spotify-playlists",
+          "features/breathing-exercises",
+          "features/weather-integration",
+          "features/feedback"
+        ]
+      },
+      {
+        "group": "Configuration",
+        "pages": [
+          "configuration/environment-variables",
+          "configuration/spotify-setup",
+          "configuration/json-server"
+        ]
+      },
+      {
+        "group": "Architecture",
+        "pages": [
+          "architecture/routing",
+          "architecture/components",
+          "architecture/api-integrations"
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Emotion-based navigation with five moods: excited, proud, stressed, tired, upset",
+    "Spotify playlist integration fetching curated tracks per emotion via the Spotify Web API",
+    "Breathing exercise recommendations matched to each emotional state",
+    "Real-time local weather data via the OpenWeatherMap API using browser geolocation",
+    "User feedback form with persistence to a JSON server backend",
+    "React Router-based single-page application with dynamic emotion routes"
+  ],
+  "publicApiSurface": [
+    "GET /emotions/:name — dynamic route rendering the per-emotion page (Emotions component)",
+    "GET /feedback — feedback page route",
+    "getValidToken() — retrieves a cached or fresh Spotify access token from localStorage",
+    "getSpotifyToken() — fetches a new Spotify client-credentials token",
+    "pageDataArray — array of emotion objects mapping mood names to Spotify playlist IDs and background images",
+    "exerciseArray — array of breathing exercise objects keyed by emotion",
+    "POST https://fist-json-server.onrender.com/responses — submits user feedback",
+    "GET https://api.spotify.com/v1/playlists/:id/tracks — fetches tracks for an emotion playlist",
+    "GET https://api.openweathermap.org/data/2.5/weather — fetches local weather by geolocation"
+  ]
+}

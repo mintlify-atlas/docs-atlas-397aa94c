@@ -1,0 +1,81 @@
+---
+title: "Environment Variables for Flatiron Support Troop"
+sidebarTitle: "Environment Variables"
+description: "Configure VITE_SPOTIFY_CLIENT_ID, VITE_SPOTIFY_CLIENT_SECRET, and VITE_WEATHER_KEY in a .env file to enable all app features."
+---
+
+## Overview
+
+Flatiron Support Troop uses [Vite's built-in environment variable system](https://vitejs.dev/guide/env-and-mode.html). Any variable you want accessible inside browser-side React code **must be prefixed with `VITE_`**. Vite statically replaces these references at build time, making their values available through `import.meta.env`.
+
+Variables that do **not** start with `VITE_` are intentionally excluded from the client bundle and will be `undefined` at runtime.
+
+## Creating the `.env` File
+
+Create a `.env` file in the **project root** (the same directory as `package.json` and `vite.config.js`) and populate it with the three required keys:
+
+```env .env
+VITE_SPOTIFY_CLIENT_ID=your_spotify_client_id_here
+VITE_SPOTIFY_CLIENT_SECRET=your_spotify_client_secret_here
+VITE_WEATHER_KEY=your_openweathermap_api_key_here
+```
+
+Restart the Vite dev server (`npm run dev`) after creating or editing this file so the new values are picked up.
+
+## Variable Reference
+
+<ParamField path="VITE_SPOTIFY_CLIENT_ID" type="string" required>
+  The **Client ID** from your Spotify Developer application. Used as the first half of the colon-separated credential string that is base64-encoded into the `Basic` authorization header when requesting an access token.
+
+  Consumed in: `src/Components/spotifyAPI/fetchToken.js`
+  ```js
+  const client_id = import.meta.env.VITE_SPOTIFY_CLIENT_ID;
+  ```
+</ParamField>
+
+<ParamField path="VITE_SPOTIFY_CLIENT_SECRET" type="string" required>
+  The **Client Secret** from your Spotify Developer application. Combined with `VITE_SPOTIFY_CLIENT_ID` and base64-encoded via `btoa()` to form the `Basic` authorization header for the token request.
+
+  Consumed in: `src/Components/spotifyAPI/fetchToken.js`
+  ```js
+  const client_secret = import.meta.env.VITE_SPOTIFY_CLIENT_SECRET;
+  const credentials = btoa(`${client_id}:${client_secret}`);
+  ```
+</ParamField>
+
+<ParamField path="VITE_WEATHER_KEY" type="string" required>
+  Your **OpenWeatherMap API key**. Passed as the `appid` query parameter to the [Current Weather Data endpoint](https://openweathermap.org/current). The app also passes the user's browser geolocation coordinates (`lat`, `lon`) and requests temperatures in `imperial` (°F) units.
+
+  Consumed in: `src/Components/Emotions.jsx`
+  ```js
+  const weatherKey = import.meta.env.VITE_WEATHER_KEY;
+  // ...
+  const response = await fetch(
+    `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${weatherKey}&units=imperial`
+  );
+  ```
+</ParamField>
+
+## Security Notice
+
+<Warning>
+  **`VITE_` variables are compiled into the browser bundle.** Anyone who opens DevTools and inspects the minified JavaScript can read their values. Treat these credentials as public-facing.
+
+  For `VITE_SPOTIFY_CLIENT_ID` and `VITE_SPOTIFY_CLIENT_SECRET` this is acceptable in development because the app uses the **Client Credentials** flow, which only accesses public Spotify data and does not expose any user account information.
+
+  For production deployments, consider routing the token request through a lightweight backend or serverless function so your Client Secret never leaves the server.
+</Warning>
+
+## Keeping `.env` out of Version Control
+
+<Note>
+  Never commit your `.env` file to Git. The repo's `.gitignore` already includes `.env`, so as long as you name the file exactly `.env` at the project root, it will be ignored automatically. If you create environment-specific variants (`.env.local`, `.env.production`), verify that they are also covered by your `.gitignore`.
+</Note>
+
+## Where Each Variable Is Consumed
+
+| Variable | File | Purpose |
+|---|---|---|
+| `VITE_SPOTIFY_CLIENT_ID` | `src/Components/spotifyAPI/fetchToken.js` | First segment of the base64-encoded Basic auth credential |
+| `VITE_SPOTIFY_CLIENT_SECRET` | `src/Components/spotifyAPI/fetchToken.js` | Second segment of the base64-encoded Basic auth credential |
+| `VITE_WEATHER_KEY` | `src/Components/Emotions.jsx` | `appid` query parameter sent to the OpenWeatherMap Current Weather endpoint |

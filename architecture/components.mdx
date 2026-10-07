@@ -1,0 +1,393 @@
+---
+title: "Component Architecture of Flatiron Support Troop"
+sidebarTitle: "Components"
+description: "A reference for every React component in Flatiron Support Troop, including its props, state, and responsibilities within the app."
+---
+
+Flatiron Support Troop is composed of five React components and two pure data modules. The component tree is shallow: `App` acts as a layout shell, and each page component (`Header`, `Emotions`, `Feedback`) is a direct child rendered into the `<Outlet>`. `Navbar` is a persistent sibling that lives outside the outlet, always visible.
+
+```
+App
+├── Navbar          (persistent — always visible)
+├── <Outlet>
+│   ├── Header      (index route — home / emotion picker)
+│   ├── Emotions    (emotions/:name — per-emotion wellness page)
+│   └── Feedback    (feedback — user feedback form)
+└── <footer>        (persistent — author credits)
+```
+
+---
+
+<AccordionGroup>
+
+  <Accordion title="App — src/App.jsx" defaultOpen>
+
+    ### Purpose
+
+    `App` is the **layout shell** for the entire application. It owns no business logic and holds no state. Its only job is to compose the persistent chrome (navigation bar + footer) around the `<Outlet>` where child routes render.
+
+    ### Props
+
+    None. `App` is mounted directly by `<RouterProvider>` and receives no external props.
+
+    ### State
+
+    None.
+
+    ### What It Renders
+
+    ```jsx
+    // src/App.jsx
+    import Navbar from './Components/Navbar'
+    import { Outlet, Link } from 'react-router-dom'
+
+    function App() {
+      return (
+        <div>
+          <Navbar>
+            <Link to="/">Home</Link>
+            <Link to="/feedback">Feedback</Link>
+          </Navbar>
+
+          <Outlet />
+
+          <footer> created by Amrita, Joyce, and Justin &lt;3 </footer>
+        </div>
+      )
+    }
+    ```
+
+    | Element | Notes |
+    |---|---|
+    | `<Navbar>` | Top navigation bar; always mounted |
+    | `<Outlet />` | Swapped by React Router with the matched child route component |
+    | `<footer>` | Static author credits; always mounted |
+
+  </Accordion>
+
+  <Accordion title="Navbar — src/Components/Navbar.jsx">
+
+    ### Purpose
+
+    Renders the top navigation bar. Provides two client-side navigation links using React Router's `<Link>` component so that navigating between pages does not trigger a full-page reload.
+
+    ### Props
+
+    None.
+
+    ### State
+
+    None.
+
+    ### What It Renders
+
+    ```jsx
+    // src/Components/Navbar.jsx
+    import { Link } from "react-router-dom"
+
+    function Navbar() {
+      return (
+        <nav>
+          <Link to="/">Home</Link>
+          <Link to="/feedback">Feedback</Link>
+        </nav>
+      )
+    }
+    ```
+
+    | Link | Navigates to |
+    |---|---|
+    | Home | `/` → `Header` |
+    | Feedback | `/feedback` → `Feedback` |
+
+  </Accordion>
+
+  <Accordion title="Header — src/Components/Header.jsx">
+
+    ### Purpose
+
+    The **home page emotion picker**. Displays five clickable emotion characters against a meadow background. Each character links to the corresponding `/emotions/:name` route. Characters swap between a default SVG and a hover-state SVG on `mouseEnter` / `mouseLeave`.
+
+    ### Props
+
+    None. `Header` is rendered by the router as the index route.
+
+    ### State
+
+    | State variable | Type | Initial value | Description |
+    |---|---|---|---|
+    | `emotionImages` | `object` | `{ excited, proud, stressed, tired, upset }` each set to their default SVG import | Maps each emotion name to the SVG `src` currently displayed |
+
+    ### Emotion Display Order
+
+    The five emotions are rendered in this fixed order (left to right):
+
+    ```
+    upset → tired → excited → proud → stressed
+    ```
+
+    ### Key Logic
+
+    ```jsx
+    // src/Components/Header.jsx (excerpt)
+    const [emotionImages, setEmotionImages] = useState({
+      excited: excitedImg,
+      proud: proudImg,
+      stressed: stressedImg,
+      tired: tiredImg,
+      upset: upsetImg,
+    });
+
+    const handleMouseEnter = (emotion) => {
+      setEmotionImages((prevImages) => ({
+        ...prevImages,
+        [emotion]: getHoverImage(emotion),
+      }));
+    };
+
+    const handleMouseLeave = (emotion) => {
+      setEmotionImages((prevImages) => ({
+        ...prevImages,
+        [emotion]: getRegularImage(emotion),
+      }));
+    };
+    ```
+
+    `getHoverImage` and `getRegularImage` are switch-based helpers that return the correct SVG import for a given emotion string.
+
+    ### What It Renders
+
+    ```jsx
+    // src/Components/Header.jsx (return excerpt)
+    <div className="background-img" style={{ backgroundImage: `url(${backgroundImage})` }}>
+      <h1 className="prompt">how are you?</h1>
+      <div className="puppies-container">
+        {['upset', 'tired', 'excited', 'proud', 'stressed'].map((emotion) => (
+          <a href={`emotions/${emotion}`} key={emotion}>
+            <div className="emotion-item">
+              <img
+                src={emotionImages[emotion]}
+                onMouseEnter={() => handleMouseEnter(emotion)}
+                onMouseLeave={() => handleMouseLeave(emotion)}
+                alt={emotion}
+                title={`I am ${emotion}`}
+              />
+              <p className="emotion-text">{emotion}</p>
+            </div>
+          </a>
+        ))}
+      </div>
+    </div>
+    ```
+
+    <Note>
+      The links use plain `<a href>` rather than React Router `<Link>`. The `href` is a relative path (`emotions/excited`), so it resolves correctly from `/` but would break if rendered from a deeper path.
+    </Note>
+
+  </Accordion>
+
+  <Accordion title="Emotions — src/Components/Emotions.jsx">
+
+    ### Purpose
+
+    The **per-emotion wellness page**. Loaded when the user picks an emotion on the home page. Reads the `:name` URL param, fetches a matching Spotify playlist and the user's local weather, and renders a full-page wellness view: background image, playlist cover + top-3 playable tracks, a breathing exercise, and a weather card.
+
+    ### Props
+
+    None. The emotion is read from the URL via `useParams()`.
+
+    ### URL Param
+
+    ```jsx
+    const { name: emotion } = useParams()
+    ```
+
+    The `name` segment is destructured and aliased as `emotion` for clarity throughout the component.
+
+    ### State
+
+    | State variable | Type | Initial value | Description |
+    |---|---|---|---|
+    | `emotionPlaylist` | `array` | `[]` | Raw `items` array from the Spotify playlist tracks endpoint |
+    | `playlistImage` | `array` | `[]` | `images` array from the Spotify playlist endpoint |
+    | `weatherData` | `object` | `{}` | Full response body from the OpenWeatherMap current weather endpoint |
+
+    ### Data Sources (non-state)
+
+    | Variable | Source | Description |
+    |---|---|---|
+    | `selectPlaylist` | `pageDataArray.find(p => p.name === emotion)` | Config object for the matched emotion: `{ id, name, image, consider }` |
+    | `selectExercise` | `exerciseArray.find(e => e.emotion === emotion)` | Breathing exercise object for the matched emotion |
+
+    ### Side Effects (`useEffect`)
+
+    All three fetches fire on mount and re-fire whenever `selectPlaylist` changes (i.e., when the user navigates to a different emotion without unmounting the component):
+
+    ```jsx
+    useEffect(() => {
+      fetchSpotifyPlaylistData()
+      fetchSpotifyTrackData()
+      fetchWeatherData()
+    }, [selectPlaylist])
+    ```
+
+    See [API Integrations](/architecture/api-integrations) for the full fetch implementations.
+
+    ### What It Renders
+
+    | Section | Content |
+    |---|---|
+    | Full-viewport background | `selectPlaylist.image` (emotion-specific background JPEG) |
+    | Page title | `"when you're feeling {emotion}..."` |
+    | Playlist cover | Linked thumbnail to the full Spotify playlist; shown once `playlistImage` is non-empty |
+    | Track list | Top 3 tracks from `emotionPlaylist.slice(0, 3)`: album art, name, artists, 30-second `<audio>` preview |
+    | Breathing exercise | `selectExercise` name, description, inhale/hold/exhale seconds, and cycle count |
+    | Weather card | `"consider {selectPlaylist.consider}"` prompt + current city, weather description, temperature, and feels-like temperature (°F) |
+
+  </Accordion>
+
+  <Accordion title="Feedback — src/Components/Feedback.jsx">
+
+    ### Purpose
+
+    A **user feedback form and display**. Lets visitors submit a free-text comment, which is POST-ed to the hosted JSON server and optimistically appended to the on-screen comment list.
+
+    ### Props
+
+    None.
+
+    ### State
+
+    | State variable | Type | Initial value | Description |
+    |---|---|---|---|
+    | `comments` | `array` | `[{id: 100, text: "this is great"}, {id: 200, text: "I use this app all the time"}]` | Array of `{ id, text }` comment objects; pre-seeded with two sample entries |
+    | `newComment` | `string` | `""` | Controlled value of the `<textarea>` input |
+
+    ### Event Handlers
+
+    **`handleInputChange(event)`** — updates `newComment` on every keystroke:
+
+    ```jsx
+    const handleInputChange = (event) => {
+      setNewComment(event.target.value)
+    }
+    ```
+
+    **`handleSubmit(event)`** — prevents default form submission, validates the input is non-empty (after trimming), builds a comment object, resets the input field immediately, then fires a `POST` to the JSON server. On success the new comment is appended to `comments` via an optimistic state update:
+
+    ```jsx
+    const handleSubmit = (event) => {
+      event.preventDefault()
+
+      if (newComment.trim()) {
+        const submitComment = {
+          id: comments.length + 1,
+          text: newComment
+        }
+        setNewComment("") // reset input immediately
+
+        fetch('https://fist-json-server.onrender.com/responses', {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(submitComment),
+        })
+        .then((response) => response.json())
+        .then((data) => {
+          setComment((prevComments) => [...prevComments, submitComment])
+        })
+        .catch((error) => console.error("Error submitting comment", error))
+      }
+    }
+    ```
+
+    <Note>
+      The optimistic update uses the locally constructed `submitComment` object rather than the server-echoed `data` — so the comment is appended even if the server response body differs.
+    </Note>
+
+    ### What It Renders
+
+    | Element | Description |
+    |---|---|
+    | `<textarea>` | Controlled input bound to `newComment` |
+    | Submit button | Triggers `handleSubmit` |
+    | Comment list | Maps `comments` to `<div><p>{comment.text}</p></div>` entries; shows "No comments yet." when empty |
+
+  </Accordion>
+
+</AccordionGroup>
+
+---
+
+## UI Primitives (`src/Components/ui/`)
+
+The app uses **shadcn/ui** components — thin wrappers around Radix UI primitives styled with Tailwind CSS. These are declared in `components.json` at the project root. The following primitives are present:
+
+| File | Radix primitive | Primary use |
+|---|---|---|
+| `button.tsx` | `@radix-ui/react-slot` | Styled button with variant support |
+| `card.tsx` | — | Container card layout |
+| `form.tsx` | `react-hook-form` + `@hookform/resolvers` + `zod` | Form field wrappers with validation |
+| `hover-card.tsx` | `@radix-ui/react-hover-card` | Hoverable information popover |
+| `input.tsx` | — | Styled text input |
+| `label.tsx` | `@radix-ui/react-label` | Accessible form label |
+| `textarea.tsx` | — | Styled multi-line text input |
+| `tooltip.tsx` | `@radix-ui/react-tooltip` | Accessible tooltip |
+
+---
+
+## Data Modules
+
+These files are not React components — they export static arrays consumed by `Emotions.jsx`.
+
+### `pageDataArray` — `src/Components/spotifyAPI/page-array.jsx`
+
+Exports one config object per emotion. `Emotions.jsx` calls `.find(page => page.name === emotion)` to select the correct entry at runtime.
+
+| Field | Type | Description |
+|---|---|---|
+| `id` | `string` | Spotify playlist ID |
+| `name` | `string` | Emotion string (matches the `:name` URL param) |
+| `image` | imported asset | Background JPEG displayed on the emotion page |
+| `consider` | `string` | Short activity suggestion shown on the weather card |
+
+```jsx
+// src/Components/spotifyAPI/page-array.jsx
+export const pageDataArray = [
+  { id: "4yN7w2k29EjRTSuSsk0H83", name: "stressed",  image: upsetImg,    consider: "stretching" },
+  { id: "7MQ9d9fffu2XIFdLEj2qno", name: "tired",     image: tiredImg,    consider: "going to bed" },
+  { id: "621IjaU1LGS1OPgLtPvMeT", name: "upset",     image: excitedImg,  consider: "feeling some grass" },
+  { id: "7INcD4lmarWTQiDVodjVt4", name: "proud",     image: stressedImg, consider: "telling your mom you love her" },
+  { id: "64oKoqB5rfgVSzZ0WIiqXc", name: "excited",   image: proudImg,    consider: "running through the streets" },
+]
+```
+
+### `exerciseArray` — `src/exercise-array.jsx`
+
+Exports one breathing exercise per emotion. `Emotions.jsx` calls `.find(exercise => exercise.emotion === emotion)` to select the correct entry.
+
+| Field | Type | Description |
+|---|---|---|
+| `id` | `number` | Unique identifier |
+| `name` | `string` | Exercise name (e.g. `"box breathing"`) |
+| `description` | `string` | Plain-language description |
+| `inhale` | `number` | Inhale duration in seconds |
+| `hold` | `number` | Hold duration in seconds (`0` if no hold) |
+| `exhale` | `number` | Exhale duration in seconds |
+| `cycles` | `number` | Recommended number of cycles |
+| `emotion` | `string` | Emotion key matching `:name` URL param |
+
+```jsx
+// src/exercise-array.jsx
+export const exerciseArray = [
+  { id: 1, name: "box breathing",          emotion: "proud",   inhale: 4, hold: 4, exhale: 4, cycles: 5,
+    description: "Inhale, hold, exhale, and hold each for 4 seconds." },
+  { id: 2, name: "4-7-8 breathing",        emotion: "tired",   inhale: 4, hold: 7, exhale: 8, cycles: 5,
+    description: "Inhale for 4, hold for 7, and exhale for 8 seconds." },
+  { id: 3, name: "pursed lip breathing",   emotion: "upset",   inhale: 5, hold: 0, exhale: 5, cycles: 5,
+    description: "Inhale for 5 seconds and exhale for 5 seconds with pursed lips." },
+  { id: 4, name: "diaphragmatic breathing",emotion: "stressed",inhale: 6, hold: 0, exhale: 6, cycles: 5,
+    description: "Deep breaths focusing on expanding the diaphragm. Inhale for 6 seconds, exhale for 6." },
+  { id: 5, name: "resonant breathing",     emotion: "excited", inhale: 5, hold: 0, exhale: 5, cycles: 6,
+    description: "Inhale and exhale slowly, 5 seconds each." },
+]
+```

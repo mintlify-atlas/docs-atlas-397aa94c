@@ -1,0 +1,136 @@
+---
+title: "Breathing Exercises Matched to Your Emotional State"
+sidebarTitle: "Breathing Exercises"
+description: "Flatiron Support Troop recommends one of five scientifically-grounded breathing techniques based on the emotion you select, with precise timing for each cycle."
+---
+
+## Overview
+
+Every emotion page includes a dedicated breathing exercise panel. Rather than showing a generic relaxation tip, the app selects a technique that is clinically appropriate for the emotional state — for example, slow resonant breathing for excited energy, or 4-7-8 breathing to ease you into sleep when tired.
+
+---
+
+## Data Source: `exercise-array.jsx`
+
+All five exercises are defined in `src/exercise-array.jsx` as `exerciseArray`. Each entry carries the emotion it belongs to, the technique name, a short description, inhale / hold / exhale durations in seconds, and a cycle count.
+
+```jsx
+export const exerciseArray = [
+  {
+    id: 1,
+    name: "box breathing",
+    description: "Inhale, hold, exhale, and hold each for 4 seconds.",
+    inhale: 4,
+    hold: 4,
+    exhale: 4,
+    cycles: 5,
+    emotion: "proud"
+  },
+  {
+    id: 2,
+    name: "4-7-8 breathing",
+    description: "Inhale for 4, hold for 7, and exhale for 8 seconds.",
+    inhale: 4,
+    hold: 7,
+    exhale: 8,
+    cycles: 5,
+    emotion: "tired"
+  },
+  {
+    id: 3,
+    name: "pursed lip breathing",
+    description: "Inhale for 5 seconds and exhale for 5 seconds with pursed lips.",
+    inhale: 5,
+    hold: 0,
+    exhale: 5,
+    cycles: 5,
+    emotion: "upset"
+  },
+  {
+    id: 4,
+    name: "diaphragmatic breathing",
+    description: "Deep breaths focusing on expanding the diaphragm. Inhale for 6 seconds, exhale for 6.",
+    inhale: 6,
+    hold: 0,
+    exhale: 6,
+    cycles: 5,
+    emotion: "stressed"
+  },
+  {
+    id: 5,
+    name: "resonant breathing",
+    description: "Inhale and exhale slowly, 5 seconds each.",
+    inhale: 5,
+    hold: 0,
+    exhale: 5,
+    cycles: 6,
+    emotion: "excited"
+  }
+]
+```
+
+---
+
+## Exercise Lookup
+
+Inside `Emotions.jsx`, the correct exercise is selected with a single `.find()` call that matches on the `emotion` field:
+
+```jsx
+const selectExercise = exercises.find(exercise => exercise.emotion === emotion)
+```
+
+Here `emotion` is the `:name` URL param read from React Router via `useParams()`. Because each emotion maps to exactly one exercise, `selectExercise` is always a single object.
+
+---
+
+## All Five Exercises at a Glance
+
+| Emotion | Exercise Name | Inhale | Hold | Exhale | Cycles |
+|---|---|---|---|---|---|
+| proud | Box breathing | 4 s | 4 s | 4 s | 5 |
+| tired | 4-7-8 breathing | 4 s | 7 s | 8 s | 5 |
+| upset | Pursed lip breathing | 5 s | 0 s | 5 s | 5 |
+| stressed | Diaphragmatic breathing | 6 s | 0 s | 6 s | 5 |
+| excited | Resonant breathing | 5 s | 0 s | 5 s | 6 |
+
+---
+
+## Technique Descriptions
+
+**Box breathing** (proud)  
+A symmetrical four-phase cycle — equal counts for inhale, hold, exhale, and a final hold — widely used to build calm focus and a sense of grounded confidence.
+
+**4-7-8 breathing** (tired)  
+A ratio-based technique that prolongs the exhale and extends the breath-hold to activate the parasympathetic nervous system, making it particularly effective as a sleep aid.
+
+**Pursed lip breathing** (upset)  
+Exhaling slowly through lightly pursed lips extends the breath and naturally slows the breathing rate, helping to reduce physical tension associated with emotional distress.
+
+**Diaphragmatic breathing** (stressed)  
+Also known as belly breathing, this technique consciously engages the diaphragm with long, deep breaths that counteract the shallow chest breathing typical of a stress response.
+
+**Resonant breathing** (excited)  
+Breathing at a steady five-seconds-in / five-seconds-out rhythm brings the heart rate into resonance with the respiratory cycle, channelling high energy into a calm, alert state.
+
+---
+
+## JSX Rendering in `Emotions.jsx`
+
+The exercise section is rendered inside a `<div className='wellness'>` block:
+
+```jsx
+{/* rendering the breathing exercises */}
+<div className='wellness'>
+    <h2>a breathing exercise</h2>
+    <ul>
+    <li>
+        <h3>{selectExercise.name}</h3>
+        <p>{selectExercise.description}</p>
+        <p>Inhale: {selectExercise.inhale}s, Hold: {selectExercise.hold}s, Exhale: {selectExercise.exhale}s</p>
+        <p>Cycles: {selectExercise.cycles}</p>
+    </li>
+    </ul>
+</div>
+```
+
+The exercise name is shown as an `<h3>`, followed by the prose description, a single line summarising the timing, and the cycle count — everything drawn directly from the matching `exerciseArray` entry.

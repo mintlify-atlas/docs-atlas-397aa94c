@@ -1,0 +1,201 @@
+---
+title: "Client-Side Routing with React Router v6"
+sidebarTitle: "Routing"
+description: "Flatiron Support Troop uses React Router v6 createBrowserRouter with nested routes to render the emotion, home, and feedback pages within a shared App shell."
+---
+
+Flatiron Support Troop is a single-page React application. All navigation is handled entirely client-side by **React Router v6** — the browser never performs a full-page reload when moving between the home picker, a per-emotion wellness page, and the feedback form.
+
+---
+
+## Route Tree
+
+The router is declared in `src/main.jsx` as a single nested configuration object passed to `createBrowserRouter`. There is one root route (`/`) whose `element` is the `App` shell. Every other page is a **child route** that renders inside that shell.
+
+```
+/                  →  App  (shell: Navbar + Outlet + footer)
+├── index          →  Header        (home page, emotion picker)
+├── emotions/:name →  Emotions      (per-emotion wellness page)
+└── feedback       →  Feedback      (user feedback form)
+```
+
+---
+
+## Router Definition (`src/main.jsx`)
+
+```jsx
+import { createRoot } from 'react-dom/client'
+import { createBrowserRouter, RouterProvider } from 'react-router-dom'
+import './index.css'
+import App from './App.jsx'
+import Feedback from './Components/Feedback.jsx'
+import Emotions from './Components/Emotions.jsx'
+import Header from './Components/Header.jsx'
+
+const routes = [
+  {
+    path: "/",
+    element: <App />,
+    children: [
+      {
+        index: true,
+        element: <Header/>
+      },
+      {
+        path: "emotions/:name",
+        element: <Emotions />
+      },
+      {
+        path: "feedback",
+        element: <Feedback />
+      }
+    ]
+  }
+]
+
+const router = createBrowserRouter(routes)
+
+createRoot(document.getElementById('root')).render( <RouterProvider router={router}/> )
+```
+
+`createBrowserRouter` consumes the `routes` array and produces a `router` instance that is handed to `<RouterProvider>` — the single component that mounts the whole app into the `#root` DOM node.
+
+---
+
+## The `<Outlet />` Pattern in `App.jsx`
+
+```jsx
+// src/App.jsx
+import Navbar from './Components/Navbar'
+import { Outlet, Link } from 'react-router-dom'
+
+function App() {
+  return (
+    <div>
+      <Navbar>
+        <Link to="/">Home</Link>
+        <Link to="/feedback">Feedback</Link>
+      </Navbar>
+
+      <Outlet />
+
+      <footer> created by Amrita, Joyce, and Justin &lt;3 </footer>
+    </div>
+  )
+}
+```
+
+`App` is the **layout shell**. It renders two persistent pieces of UI — the `<Navbar>` at the top and the `<footer>` credits at the bottom — that appear on every page of the app. `<Outlet />` is a React Router placeholder; at runtime the router swaps in whichever child route matches the current URL:
+
+| Current URL | What `<Outlet />` renders |
+|---|---|
+| `/` | `<Header>` |
+| `/emotions/tired` | `<Emotions>` |
+| `/feedback` | `<Feedback>` |
+
+This means the `Navbar` and `footer` never unmount as the user navigates — only the outlet content changes.
+
+---
+
+## Dynamic Segment: `emotions/:name`
+
+The path `emotions/:name` contains a **dynamic segment** (`:name`). React Router captures whatever string appears at that position in the URL and makes it available through the `useParams()` hook.
+
+Inside `Emotions.jsx`, the param is destructured with an alias so the rest of the component uses the more descriptive name `emotion`:
+
+```jsx
+// src/Components/Emotions.jsx
+const { name: emotion } = useParams()
+```
+
+The segment must match one of the five valid emotion strings. The full set of valid URLs is:
+
+| URL | Emotion rendered |
+|---|---|
+| `/emotions/upset` | upset |
+| `/emotions/tired` | tired |
+| `/emotions/excited` | excited |
+| `/emotions/proud` | proud |
+| `/emotions/stressed` | stressed |
+
+If an unrecognised emotion string is passed, `pageData.find()` inside `Emotions.jsx` will return `undefined` and the component will error — there is no fallback/404 route defined.
+
+---
+
+## How Header Links to Emotion Routes
+
+`Header.jsx` generates the five emotion links by mapping over a hard-coded array of emotion strings. Each produces an `<a>` tag with a relative `href`:
+
+```jsx
+// src/Components/Header.jsx  (relevant excerpt)
+{['upset', 'tired', 'excited', 'proud', 'stressed'].map((emotion) => (
+  <a href={`emotions/${emotion}`} key={emotion}>
+    <div className="emotion-item">
+      <img
+        src={emotionImages[emotion]}
+        onMouseEnter={() => handleMouseEnter(emotion)}
+        onMouseLeave={() => handleMouseLeave(emotion)}
+        alt={emotion}
+        title={`I am ${emotion}`}
+      />
+      <p className="emotion-text">{emotion}</p>
+    </div>
+  </a>
+))}
+```
+
+Each `<img>` also swaps between its default SVG and a hover-state SVG via `handleMouseEnter` / `handleMouseLeave`, giving the emotion picker its interactive hover effect.
+
+<Note>
+  These links use plain `<a href>` tags (relative paths) rather than React Router `<Link>` components. This means clicking an emotion tile triggers a full navigation rather than a client-side transition, but the router still handles the resulting URL correctly.
+</Note>
+
+---
+
+## Navbar Links
+
+The `Navbar` component provides two React Router `<Link>` components for programmatic client-side navigation between the two non-emotion pages:
+
+```jsx
+// src/Components/Navbar.jsx
+import { Link } from "react-router-dom"
+
+function Navbar() {
+  return (
+    <nav>
+      <Link to="/">Home</Link>
+      <Link to="/feedback">Feedback</Link>
+    </nav>
+  )
+}
+```
+
+Unlike `<a href>`, `<Link>` uses the History API to push a new entry without a full page reload, keeping the React component tree alive.
+
+---
+
+## Route Reference Table
+
+| Path | Component | Description |
+|------|-----------|-------------|
+| `/` | `Header` | Home page with emotion picker |
+| `/emotions/:name` | `Emotions` | Per-emotion wellness page (playlist, breathing exercise, weather) |
+| `/feedback` | `Feedback` | User feedback submission form and display |
+
+---
+
+## Deployment: Netlify Redirect Rule
+
+Because the app uses the HTML5 History API (`createBrowserRouter`), any URL entered directly into the browser — or reached via a hard refresh — will hit the CDN without a matching file, resulting in a 404.
+
+The file `public/netlify.toml` solves this by redirecting every request back to `index.html`, letting the client-side router handle the path:
+
+```toml
+# public/netlify.toml
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+```
+
+The `status = 200` (rewrite rather than redirect) means the URL in the browser bar stays unchanged while Netlify serves `index.html`, after which React Router parses the path and renders the correct route.

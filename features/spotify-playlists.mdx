@@ -1,0 +1,129 @@
+---
+title: "Spotify Playlists: Curated Music for Every Mood"
+sidebarTitle: "Spotify Playlists"
+description: "For each emotion, Flatiron Support Troop fetches a curated Spotify playlist and displays the top three tracks with album art and audio previews."
+---
+
+## Overview
+
+Every emotion page in Flatiron Support Troop surfaces a hand-picked Spotify playlist. The `Emotions` component makes two separate Spotify Web API requests: one to retrieve the playlist's cover image (and a deep-link back to Spotify), and another to retrieve the individual tracks. The top three tracks are displayed with album art, track name, artist name, and an inline audio preview where available.
+
+---
+
+## Spotify API Calls
+
+Both fetch functions live in `Emotions.jsx` and share the same authenticated pattern: they first obtain a valid bearer token via `getValidToken()`, then call the Spotify Web API.
+
+### `fetchSpotifyTrackData` — GET `/v1/playlists/:id/tracks`
+
+Retrieves the full track listing for the selected playlist. The component then slices the first three items for display.
+
+```jsx
+async function fetchSpotifyTrackData() {
+    const token = await getValidToken();
+    const url = `https://api.spotify.com/v1/playlists/${selectPlaylist.id}/tracks`;
+
+    try {
+        const response = await fetch(url, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            setEmotionPlaylist(data.items);
+        } else {
+            console.error(`Error fetching Spotify tracks: ${data.error.message} (Status: ${response.status})`);
+        }
+
+    } catch (error) {
+        console.error(`Error fetching Spotify tracks: ${error.message}`);
+    }
+}
+```
+
+### `fetchSpotifyPlaylistData` — GET `/v1/playlists/:id`
+
+Retrieves the playlist object itself. The component reads `data.images` to obtain the cover art URL.
+
+```jsx
+async function fetchSpotifyPlaylistData() {
+    const token = await getValidToken();
+    const url = `https://api.spotify.com/v1/playlists/${selectPlaylist.id}`;
+
+    try {
+        const response = await fetch(url, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            setPlaylistImage(data.images);
+        } else {
+            console.error(`Error fetching Spotify playlist: ${data.error.message} (Status: ${response.status})`);
+        }
+
+    } catch (error) {
+        console.error(`Error fetching Spotify playlist: ${error.message}`);
+    }
+}
+```
+
+Both functions are called inside a `useEffect` that re-runs whenever `selectPlaylist` changes — i.e., whenever the user navigates to a different emotion page.
+
+---
+
+## Token Management
+
+Spotify access tokens expire after one hour. The app handles this transparently through the `getValidToken()` helper (defined in `src/Components/spotifyAPI/tokenManager`).
+
+- On first call, `getValidToken()` fetches a fresh token from the Spotify accounts service and **caches it in `localStorage`** along with its expiry timestamp.
+- On subsequent calls, it reads from `localStorage` and returns the cached token immediately — **no network request is made** — unless the token has expired.
+- When the cached token is expired, `getValidToken()` fetches a new one, overwrites the cache, and returns the fresh token.
+
+This means the Spotify credential flow is invisible to the rest of the application: `fetchSpotifyTrackData` and `fetchSpotifyPlaylistData` simply `await getValidToken()` and always receive a usable token.
+
+---
+
+## What Is Displayed
+
+### Playlist Cover
+
+When `playlistImage` state is populated, the cover art is rendered as a clickable link that opens the full playlist in Spotify:
+
+```jsx
+{playlistImage.length && (
+  <a className='playlist-cover' href={`https://open.spotify.com/playlist/${selectPlaylist.id}`}>
+    <img src={playlistImage[0].url}/>
+    <p>click ↑ to get the full spotify playlist</p>
+  </a>
+)}
+```
+
+### Top 3 Tracks
+
+The first three items from `emotionPlaylist` are rendered as a list. Each item shows:
+
+- **Album art** — 64 × 64 px thumbnail from `trackItem.track.album.images[0]?.url`
+- **Track name** — from `trackItem.track.name`
+- **Artist name(s)** — all artists joined with a comma, from `trackItem.track.artists.map(artist => artist.name).join(', ')`
+- **Audio preview** — an `<audio controls>` element rendered **only** when `trackItem.track.preview_url` is not `null`
+
+> **Note:** Spotify sets `preview_url` to `null` for a significant portion of tracks depending on region and licensing. When this happens the audio player is simply omitted — no error is shown.
+
+---
+
+## Playlist IDs by Emotion
+
+The playlist ID for each emotion is stored in `src/Components/spotifyAPI/page-array.jsx` as part of the `pageDataArray`. These IDs are passed directly into the Spotify API URL.
+
+| Emotion | Spotify Playlist ID |
+|---|---|
+| `stressed` | `4yN7w2k29EjRTSuSsk0H83` |
+| `tired` | `7MQ9d9fffu2XIFdLEj2qno` |
+| `upset` | `621IjaU1LGS1OPgLtPvMeT` |
+| `proud` | `7INcD4lmarWTQiDVodjVt4` |
+| `excited` | `64oKoqB5rfgVSzZ0WIiqXc` |
+
+You can open any playlist directly at `https://open.spotify.com/playlist/<id>`.

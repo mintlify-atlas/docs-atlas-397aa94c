@@ -1,0 +1,134 @@
+---
+title: "User Feedback: Submit and View Community Comments"
+sidebarTitle: "Feedback"
+description: "The Feedback page lets users submit text comments that are persisted to a hosted JSON server and displayed alongside pre-seeded community feedback."
+---
+
+## Overview
+
+The `/feedback` route renders the `Feedback` component, which provides a simple community board. Users can type a comment into a textarea and submit it. Submitted comments are POSTed to a hosted JSON server and immediately appended to the list on screen — no page reload required. Pre-seeded comments are always visible, giving new users the impression of an active community from the first visit.
+
+---
+
+## Routing
+
+The feedback page is registered as a child route of the root layout in `main.jsx`:
+
+```jsx
+{
+  path: "feedback",
+  element: <Feedback />
+}
+```
+
+Navigate to `/feedback` to reach the page.
+
+---
+
+## Pre-Seeded Comments
+
+The `Feedback` component initialises its `comments` state with two hardcoded entries:
+
+```jsx
+const [comments, setComment] = useState([
+  { id: 100, text: "this is great" },
+  { id: 200, text: "I use this app all the time" },
+])
+```
+
+These are always present when the page loads, regardless of what has been submitted to the server.
+
+> **Note:** Comments are **not** fetched from the server on page load in the current implementation. The `useEffect` that would call `GET /responses` is commented out in the source. This means only the two pre-seeded comments and comments submitted during the current session are visible — previous user submissions from other sessions are not loaded.
+
+---
+
+## Submitting a Comment
+
+### The Form
+
+The form consists of a `<textarea>` bound to `newComment` state and a submit button. Typing in the textarea updates `newComment` via `handleInputChange`; submitting the form fires `handleSubmit`.
+
+### `handleSubmit`
+
+```jsx
+const handleSubmit = (event) => {
+  event.preventDefault()
+
+  if (newComment.trim()) {   // NEW COMMENT TO SERVER WITH POST
+    const submitComment = {
+      id: comments.length + 1,
+      text: newComment
+    }
+    setNewComment("") // RESET INPUT
+
+    fetch('https://fist-json-server.onrender.com/responses', {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(submitComment),
+    })
+    .then((response) => response.json())
+    .then((data) => {
+      setComment((prevComments) => [...prevComments, submitComment]);
+    })
+    .catch((error) => console.error("Error submitting comment", error))
+  }
+}
+```
+
+**What happens on submit:**
+
+1. `event.preventDefault()` stops the native form submission.
+2. If the trimmed input is non-empty, a `submitComment` object is constructed: `{ id: comments.length + 1, text: newComment }`.
+3. The textarea is **cleared immediately** (`setNewComment("")`) before the network request resolves — the user gets instant feedback.
+4. A `POST` request is sent to the JSON server.
+5. On a successful response, `setComment` appends `submitComment` to the existing comments array, making it appear in the list.
+6. On failure, the error is logged with `console.error`.
+
+### POST Request Details
+
+```
+POST https://fist-json-server.onrender.com/responses
+Content-Type: application/json
+
+{
+  "id": <comments.length + 1>,
+  "text": "<user input>"
+}
+```
+
+| Field | Value |
+|---|---|
+| `id` | `comments.length + 1` at the time of submission |
+| `text` | The raw string from the textarea |
+
+---
+
+## Displaying Comments
+
+All entries in the `comments` state array — both pre-seeded and newly submitted — are rendered in the `"Feedback from our users:"` section:
+
+```jsx
+{comments.length > 0 ? (
+  comments.map((comment) => (
+    <div key={comment.id}>
+      <p>{comment.text}</p>
+    </div>
+  ))
+) : (
+  <p>No comments yet.</p>
+)}
+```
+
+The `"No comments yet."` fallback is never shown in practice because the pre-seeded comments ensure the array is never empty.
+
+---
+
+## Hosted JSON Server
+
+<Info>
+The app persists submitted comments to a hosted **json-server** instance running at:
+
+**`https://fist-json-server.onrender.com`**
+
+The relevant endpoint is `/responses`. This is a free-tier Render deployment and may experience a cold-start delay of up to 30 seconds on the first request after a period of inactivity. If your submission appears to hang briefly, this is expected behaviour — the comment will still be submitted once the server wakes up.
+</Info>

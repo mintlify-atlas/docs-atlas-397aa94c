@@ -1,0 +1,94 @@
+---
+title: "Emotion Selection: Choosing Your Mood in the App"
+sidebarTitle: "Emotion Selection"
+description: "The home page of Flatiron Support Troop presents five emotions — excited, proud, stressed, tired, and upset — each routing to a personalized wellness page."
+---
+
+## Overview
+
+When you first open Flatiron Support Troop, the **Header** component greets you with the prompt *"how are you?"* displayed over a serene meadow background (`meadow-transparency.svg`). Below the prompt, five illustrated emotion buttons invite you to identify your current mood. Clicking any one of them navigates you to a tailored wellness page built around that emotion.
+
+---
+
+## The Header Component
+
+`Header.jsx` is the application's home screen. It is rendered at the root index route (`/`) and is responsible for:
+
+1. Displaying a full-viewport meadow background image.
+2. Showing the *"how are you?"* prompt.
+3. Rendering five clickable emotion buttons in a horizontal row.
+4. Managing hover state so each emotion's illustration swaps between a default SVG and an energised hover variant.
+
+### Hover State
+
+Each emotion has two SVG assets:
+
+| Default asset | Hover asset |
+|---|---|
+| `excited.svg` | `excited-hover.svg` |
+| `proud.svg` | `proud-hover.svg` |
+| `stressed.svg` | `stressed-hover.svg` |
+| `tired.svg` | `tired-hover.svg` |
+| `upset.svg` | `upset-hover.svg` |
+
+The component stores the currently-displayed image for every emotion in a single `emotionImages` state object. `onMouseEnter` swaps in the hover variant; `onMouseLeave` restores the default.
+
+---
+
+## Routing: `/emotions/:name`
+
+Each emotion button is wrapped in an `<a>` tag that links to `emotions/<emotion>`, e.g. `emotions/excited`. React Router matches this against the `emotions/:name` route and renders the `Emotions` component, which reads the `:name` param to personalise the page.
+
+The route tree defined in `main.jsx`:
+
+```jsx
+{
+  path: "emotions/:name",
+  element: <Emotions />
+}
+```
+
+---
+
+## Rendering the Emotion List
+
+The five emotions are rendered with a `.map()` loop so the layout stays consistent and easy to extend:
+
+```jsx
+{['upset', 'tired', 'excited', 'proud', 'stressed'].map((emotion) => (
+  <a href={`emotions/${emotion}`} key={emotion}>
+    <div className="emotion-item">
+      <img
+        src={emotionImages[emotion]}
+        onMouseEnter={() => handleMouseEnter(emotion)}
+        onMouseLeave={() => handleMouseLeave(emotion)}
+        alt={emotion}
+        title={`I am ${emotion}`}
+      />
+      <p className="emotion-text">{emotion}</p>
+    </div>
+  </a>
+))}
+```
+
+Each item renders:
+- An `<img>` whose `src` is driven by the `emotionImages` state entry for that emotion.
+- `onMouseEnter` / `onMouseLeave` handlers that call `handleMouseEnter` / `handleMouseLeave` to swap the image.
+- A `<p>` label beneath the image with the emotion name.
+- An `alt` attribute equal to the emotion name and a `title` reading *"I am \{emotion\}"* for accessibility.
+
+---
+
+## Emotion → Wellness Pairings
+
+Each emotion routes to a page that combines a Spotify playlist, a breathing exercise, and a weather-aware activity nudge. The full mapping is:
+
+| Emotion | Breathing Exercise | Weather / Activity Nudge |
+|---|---|---|
+| **excited** | Resonant breathing (5s in / 5s out, 6 cycles) | "consider running through the streets" |
+| **proud** | Box breathing (4s in / 4s hold / 4s out, 5 cycles) | "consider telling your mom you love her" |
+| **stressed** | Diaphragmatic breathing (6s in / 6s out, 5 cycles) | "consider stretching" |
+| **tired** | 4-7-8 breathing (4s in / 7s hold / 8s out, 5 cycles) | "consider going to bed" |
+| **upset** | Pursed lip breathing (5s in / 5s out, 5 cycles) | "consider feeling some grass" |
+
+See [Breathing Exercises](/features/breathing-exercises) and [Weather Integration](/features/weather-integration) for full details on each of these features.

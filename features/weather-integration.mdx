@@ -1,0 +1,144 @@
+---
+title: "Live Weather Integration with Geolocation"
+sidebarTitle: "Weather Integration"
+description: "Flatiron Support Troop fetches real-time weather for your location via the OpenWeatherMap API and pairs it with a context-aware activity nudge for each emotion."
+---
+
+## Overview
+
+Each emotion page includes a live weather card that shows the current conditions at your physical location. Rather than displaying generic advice, the app pairs the weather report with an emotion-specific activity nudge — for example, *"consider going to bed"* when you're tired, or *"consider running through the streets"* when you're excited. Both pieces of information appear side-by-side in the `weather-card` panel.
+
+---
+
+## How `fetchWeatherData` Works
+
+The function lives in `Emotions.jsx` and runs on every emotion page load as part of the shared `useEffect`.
+
+```jsx
+async function fetchWeatherData(){
+    const weatherKey = import.meta.env.VITE_WEATHER_KEY
+
+    if(navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(async (position) => {
+            const lat = position.coords.latitude
+            const lon = position.coords.longitude
+
+            try{
+                const response = await fetch(
+                  `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${weatherKey}&units=imperial`
+                )
+                const data = await response.json();
+                setWeatherData(data)
+
+            } catch (error) {
+                console.error("Error fetching weather data:", error)
+            }
+
+        }, (error) => {
+            console.error("Error getting location:", error)
+        })
+
+    } else {
+        console.error("Geolocation is not supported by this browser")
+    }  
+}
+```
+
+**Step-by-step flow:**
+
+1. Read `VITE_WEATHER_KEY` from `import.meta.env`.
+2. Call `navigator.geolocation.getCurrentPosition()` to request the browser's current GPS coordinates.
+3. On success, extract `latitude` and `longitude` from `position.coords`.
+4. `fetch` the OpenWeatherMap *Current Weather* endpoint with the coordinates, the API key, and `units=imperial` for Fahrenheit output.
+5. Parse the JSON response and store it in the `weatherData` state variable via `setWeatherData`.
+
+---
+
+## OpenWeatherMap API Endpoint
+
+```
+GET https://api.openweathermap.org/data/2.5/weather
+  ?lat={latitude}
+  &lon={longitude}
+  &appid={VITE_WEATHER_KEY}
+  &units=imperial
+```
+
+| Parameter | Value |
+|---|---|
+| `lat` | Device latitude from `navigator.geolocation` |
+| `lon` | Device longitude from `navigator.geolocation` |
+| `appid` | Your OpenWeatherMap API key (`VITE_WEATHER_KEY`) |
+| `units` | `imperial` — temperatures returned in °F |
+
+---
+
+## What Is Displayed
+
+The weather card renders conditionally: the inner `<div className='weather-report'>` is shown only when `weatherData.name` is truthy (i.e., a successful response has been received).
+
+```jsx
+{weatherData.name && (
+    <div className='weather-report'>
+        <h3>weather in {weatherData.name.toLowerCase()}:</h3>
+        <p>{weatherData.weather[0].description}</p>
+        <p> temp: {Math.round(weatherData.main.temp)} °F </p> 
+        <p> feels like: {Math.round(weatherData.main.feels_like)} °F</p>
+    </div>
+)}
+```
+
+| Field | Source in API response | Notes |
+|---|---|---|
+| City name | `weatherData.name` | Lowercased for display |
+| Weather description | `weatherData.weather[0].description` | e.g. *"light rain"*, *"clear sky"* |
+| Temperature | `weatherData.main.temp` | Rounded with `Math.round()`, displayed as °F |
+| Feels like | `weatherData.main.feels_like` | Rounded with `Math.round()`, displayed as °F |
+
+---
+
+## Activity Nudge per Emotion
+
+Directly above the weather report, the card shows an emotion-specific activity nudge taken from the `consider` field in `page-array.jsx`:
+
+```jsx
+<h2>consider {selectPlaylist.consider}</h2>
+```
+
+| Emotion | Nudge |
+|---|---|
+| `stressed` | "consider stretching" |
+| `tired` | "consider going to bed" |
+| `upset` | "consider feeling some grass" |
+| `proud` | "consider telling your mom you love her" |
+| `excited` | "consider running through the streets" |
+
+---
+
+## Error Handling
+
+All failure paths are caught and written to the console — no error UI is surfaced to the user:
+
+| Failure scenario | Handler |
+|---|---|
+| Browser geolocation denied by user | Second callback of `getCurrentPosition`: `console.error("Error getting location:", error)` |
+| Browser does not support Geolocation API | `console.error("Geolocation is not supported by this browser")` |
+| OpenWeatherMap `fetch` throws (network error, etc.) | `catch (error) => console.error("Error fetching weather data:", error)` |
+
+When geolocation is denied or the fetch fails, `weatherData` remains an empty object `{}`, so `weatherData.name` is `undefined`. The conditional render means the weather card panel appears (with the activity nudge and the weather icon) but the weather report section remains blank — no error message is shown to the user.
+
+---
+
+## Environment Variable Setup
+
+<Note>
+You must add your OpenWeatherMap API key to a `.env` file in the project root before the weather feature will work.
+
+```env
+VITE_WEATHER_KEY=your_openweathermap_api_key_here
+```
+
+The `VITE_` prefix is required by Vite to expose the variable to client-side code via `import.meta.env`. Never commit your `.env` file to version control.
+</Note>
+
+You can obtain a free API key at [openweathermap.org](https://openweathermap.org/api).

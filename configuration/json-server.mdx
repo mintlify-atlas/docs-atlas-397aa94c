@@ -1,0 +1,104 @@
+---
+title: "JSON Server for Feedback Persistence"
+sidebarTitle: "JSON Server"
+description: "Flatiron Support Troop uses a hosted JSON server at fist-json-server.onrender.com to persist user feedback. Learn how to run your own instance."
+---
+
+## Overview
+
+The feedback feature in Flatiron Support Troop lets users submit short comments about the app. Submissions are persisted via [`json-server`](https://github.com/typicode/json-server) — a zero-configuration REST API that uses a plain JSON file as its database. The app ships with a hosted instance on Render, and you can spin up your own local copy in under a minute.
+
+## Hosted Endpoint
+
+The production app posts feedback to:
+
+```
+POST https://fist-json-server.onrender.com/responses
+```
+
+`json-server` automatically exposes standard REST routes for every key in the database file. The `responses` key in `db.json` maps to the `/responses` route.
+
+## The `db.json` Schema
+
+The `db.json` file in the **project root** defines the data shape and serves as the initial seed data when running a local instance:
+
+```json db.json
+{
+  "responses": [
+    { "id": "100", "text": "This is great" },
+    { "id": "200", "text": "I use this app all the time!" }
+  ]
+}
+```
+
+Every object in the `responses` array represents a single piece of user feedback. `json-server` uses `id` as the primary key and will auto-generate one if you omit it on `POST`.
+
+## Running a Local Instance
+
+Follow these steps to run your own `json-server` locally during development:
+
+<Steps>
+  <Step title="Install json-server globally">
+    ```bash
+    npm install -g json-server
+    ```
+  </Step>
+
+  <Step title="Start the server">
+    From the project root (where `db.json` lives), run:
+
+    ```bash
+    json-server --watch db.json --port 5174
+    ```
+
+    The `--watch` flag tells `json-server` to reload automatically whenever `db.json` is modified. Port `5174` is used to avoid conflicting with Vite's default port of `5173`.
+
+    You should see output confirming the server is running at `http://localhost:5174`.
+  </Step>
+
+  <Step title="Update the fetch URL in Feedback.jsx">
+    Open `src/Components/Feedback.jsx` and change the `POST` URL from the hosted Render endpoint to your local server:
+
+    ```js
+    // Before
+    fetch('https://fist-json-server.onrender.com/responses', {
+
+    // After
+    fetch('http://localhost:5174/responses', {
+    ```
+
+    Save the file — Vite's HMR will update the browser automatically.
+  </Step>
+</Steps>
+
+## Render Cold Starts
+
+<Warning>
+  The hosted instance at `fist-json-server.onrender.com` runs on Render's **free tier**, which spins down containers after a period of inactivity. The first request after a cold start can take **30–60 seconds** to respond. Subsequent requests within the same active window will be fast. If the feedback form appears to hang on first submission, wait a moment and try again.
+</Warning>
+
+## Enabling Server-Side Comment Loading
+
+The current `Feedback.jsx` implementation **does not** load existing comments from the server on page load. Only the two hardcoded comments in the component's initial state are shown when the page first renders:
+
+```js src/Components/Feedback.jsx
+const [comments, setComment] = useState([
+  {id: 100, text: "this is great"},
+  {id: 200, text: "I use this app all the time"},
+])
+```
+
+A `useEffect` to fetch server-side comments is present in the file but commented out:
+
+```js src/Components/Feedback.jsx
+// useEffect(() => {
+//   fetch("http://localhost:5174/response")
+//     .then((response) => response.json())
+//     .then((data) => newComments(data))
+//     .catch((error) => console.error("Error fetching comments:", error))
+// }, [])
+```
+
+<Note>
+  To enable server-side comment loading, uncomment this `useEffect` block in `src/Components/Feedback.jsx` and update the URL to match whichever endpoint you are targeting (local or hosted). Note that the current commented code targets `http://localhost:5174/response` (singular) — update it to `/responses` (plural) to match the correct `db.json` key and the hosted endpoint path.
+</Note>

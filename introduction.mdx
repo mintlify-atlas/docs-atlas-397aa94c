@@ -1,0 +1,78 @@
+---
+title: "Flatiron Support Troop: Mood-Based Wellness for Everyone"
+sidebarTitle: "Introduction"
+description: "Flatiron Support Troop is a React wellness app that matches your mood to Spotify playlists, breathing exercises, and live weather data."
+---
+
+Flatiron Support Troop is a single-page React application built to meet you wherever you are emotionally. You choose one of five feelings — **excited**, **proud**, **stressed**, **tired**, or **upset** — and the app instantly surfaces a curated Spotify playlist matched to that mood, a guided breathing exercise to help regulate your nervous system, and real-time local weather context so you can decide whether a walk outside might help. Everything happens in the browser; no account creation is required to start using it.
+
+## What You Get for Each Mood
+
+When a user selects an emotion, the app looks up that emotion's entry in its page data array and fires three concurrent requests:
+
+| Emotion | Spotify Playlist ID |
+|---------|-------------------|
+| 😤 Stressed | `4yN7w2k29EjRTSuSsk0H83` |
+| 😴 Tired | `7MQ9d9fffu2XIFdLEj2qno` |
+| 😢 Upset | `621IjaU1LGS1OPgLtPvMeT` |
+| 🏆 Proud | `7INcD4lmarWTQiDVodjVt4` |
+| 🎉 Excited | `64oKoqB5rfgVSzZ0WIiqXc` |
+
+Each emotion page renders:
+- **Playlist tracks** — the top three tracks from the matching Spotify playlist, with album art and a 30-second audio preview where available.
+- **Breathing exercise** — a named technique (e.g. box breathing, 4-7-8) with inhale / hold / exhale timings and a recommended cycle count.
+- **Local weather** — current conditions, temperature, and "feels like" reading fetched from OpenWeatherMap using the browser's Geolocation API.
+
+## Who Built It
+
+Flatiron Support Troop was created by **Amrita, Joyce, and Justin** — a trio of developers whose names live in the app's footer.
+
+## Tech Stack
+
+| Layer | Technology |
+|-------|-----------|
+| UI framework | React 18 |
+| Build tool | Vite 5 |
+| Routing | React Router v6 |
+| Styling | Tailwind CSS v3 + tailwind-merge |
+| Primitive components | Radix UI (`hover-card`, `label`, `slot`, `tooltip`) |
+| Forms & validation | react-hook-form + zod |
+| Icons | lucide-react |
+
+## External APIs
+
+The app consumes three external services at runtime:
+
+1. **Spotify Web API** — authenticated via the [Client Credentials flow](https://developer.spotify.com/documentation/web-api/tutorials/client-credentials-flow). The access token is fetched using `VITE_SPOTIFY_CLIENT_ID` and `VITE_SPOTIFY_CLIENT_SECRET`, then cached in memory with automatic refresh before expiry.
+2. **OpenWeatherMap API** — the browser requests the user's geolocation coordinates and passes them to the `/data/2.5/weather` endpoint with `VITE_WEATHER_KEY` to retrieve current conditions in imperial units.
+3. **Hosted JSON Server** — user feedback submitted through the app is persisted to `https://fist-json-server.onrender.com/responses`, a hosted `json-server` instance that requires no authentication from the client.
+
+<Note>
+  You will need a **Spotify Developer** account and an **OpenWeatherMap** account to obtain API keys before the app can fetch mood playlists or weather data. See [Getting Started](/getting-started) for the full setup walkthrough.
+</Note>
+
+## Explore the Docs
+
+<CardGroup cols={3}>
+  <Card
+    title="Features"
+    icon="sparkles"
+    href="/features"
+  >
+    A deep dive into the mood selector, playlist player, breathing exercises, and weather widget.
+  </Card>
+  <Card
+    title="Configuration"
+    icon="sliders"
+    href="/configuration"
+  >
+    All environment variables, Spotify app settings, and OpenWeatherMap plan requirements explained.
+  </Card>
+  <Card
+    title="Architecture"
+    icon="diagram-project"
+    href="/architecture"
+  >
+    How routing, API token management, and the feedback data flow fit together under the hood.
+  </Card>
+</CardGroup>
